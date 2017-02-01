@@ -1,0 +1,91 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:context="http://www.springframework.org/schema/context"
+	xmlns:mvc="http://www.springframework.org/schema/mvc"
+	xmlns:aop="http://www.springframework.org/schema/aop"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans
+        http://www.springframework.org/schema/beans/spring-beans.xsd
+		http://www.springframework.org/schema/context
+		http://www.springframework.org/schema/context/spring-context.xsd
+		http://www.springframework.org/schema/mvc
+		http://www.springframework.org/schema/mvc/spring-mvc.xsd
+		http://www.springframework.org/schema/aop
+		http://www.springframework.org/schema/aop/spring-aop.xsd">
+
+	<bean id="validator" class="org.springframework.validation.beanvalidation.LocalValidatorFactoryBean" />
+	<bean id="messageConverters" class="org.springframework.http.converter.json.MappingJackson2HttpMessageConverter">
+		<property name="supportedMediaTypes">
+			<list>
+				<value>application/json;charset=UTF-8</value>
+			</list>
+		</property>
+		<property name="objectMapper">
+			<bean class="com.fasterxml.jackson.databind.ObjectMapper">
+				<property name="serializationInclusion">
+					<value type="com.fasterxml.jackson.annotation.JsonInclude.Include">NON_DEFAULT</value>
+				</property>
+				<property name="dateFormat">
+					<value type="java.text.SimpleDateFormat">yyyy-MM-dd HH:mm:ss</value>
+				</property>
+			</bean>
+		</property>
+	</bean>
+	<mvc:annotation-driven>
+		<mvc:message-converters>
+			<ref bean="messageConverters" />
+		</mvc:message-converters>
+	</mvc:annotation-driven>
+	<context:component-scan base-package="net.csdn.blog.chaijunkun.controller" />
+	<!-- JSR 303验证切面类 -->
+	<bean id="jsrValidationAdvice" class="net.csdn.blog.chaijunkun.aop.JSRValidationAdvice" />
+	<aop:config>
+		<!-- 切入点表达式 -->
+		<!-- 在多个表达式之间使用  || , or 表示  或 ，使用  && , and 表示  与 ， !表示 非 -->
+		<aop:pointcut id="jsrValidationPCProtected" expression="execution(public void net.csdn.blog.chaijunkun.controller.*.*(..))" />
+		<aop:pointcut id="jsrValidationPC" expression="execution(public net.csdn.blog.chaijunkun.entity.Resp net.csdn.blog.chaijunkun.controller.*.*(..))" />
+		
+		<!-- 了解下面两个的用法 -->
+<!-- 	<aop:advisor /> -->
+
+		<!-- 切面：通知集合。最佳实践：可以定义多个切面逐一对应多个通知类,多个切面可以用order属性指定执行先后顺序 -->
+		<aop:aspect id="jsrValidationAspect" ref="jsrValidationAdvice">
+			<!-- 通知 -->
+			<aop:before method="before" pointcut-ref="jsrValidationPC" />
+			<aop:around method="around" pointcut-ref="jsrValidationPC" />
+			<aop:after method="after" pointcut-ref="jsrValidationPC" />
+			<aop:after-returning method="afterReturning" pointcut-ref="jsrValidationPC" returning="retv" />
+			<aop:after-throwing method="afterThorwing" pointcut-ref="jsrValidationPC" throwing="ex"/>
+<!-- 		<aop:before method="before" pointcut-ref="jsrValidationPCProtected" /> -->
+<!-- 		<aop:around method="around" pointcut-ref="jsrValidationPCProtected" /> -->
+<!-- 		<aop:after method="after" pointcut-ref="jsrValidationPCProtected" /> -->
+<!-- 		<aop:after-returning method="afterReturning" pointcut-ref="jsrValidationPCProtected" returning="retv" /> -->
+<!-- 		<aop:after-throwing method="afterThorwing" pointcut-ref="jsrValidationPCProtected" throwing="ex"/> -->
+			
+			<!-- 了解下面两个的用法 -->
+<!-- 		<aop:declare-parents types-matching="" implement-interface=""/> -->
+			
+		</aop:aspect>
+	</aop:config>
+	
+<!-- 打开基于Annotation的AOP -->
+<!-- 
+	 proxy-target-class属性值决定是基于接口的还是基于类的代理被创建。如果proxy-target-class 属性值被设置为true， 那么基于类的代理将起作用（这时需要cglib库）。
+	  如果proxy-target-class属值被设置为false或者这个属性被省略，那么标准的JDK 基于接口的代理。proxy-target-class是Spring的标签的属性配置项，不光在Spring的aop便签中有该配置，在其他便签中也可能有该配置，意义一样。不是aop专享的。
+	 expose-proxy：当前代理是否为可暴露状态,值是"ture",则为可访问。
+-->
+<!-- <aop:aspectj-autoproxy expose-proxy="false" proxy-target-class="false"></aop:aspectj-autoproxy> -->
+<!-- 一般采用下面的写法 -->
+<!-- <aop:aspectj-autoproxy /> -->
+<!-- 下面这个 很少用 可以参考博文http://blog.csdn.net/myyate/article/details/1820142 -->
+<!-- <aop:scoped-proxy proxy-target-class="true"/> -->
+
+
+<!-- 
+<aop:pointcut>：用来定义切入点，该切入点可以重用； 
+<aop:advisor>：用来定义只有一个通知和一个切入点的切面； 除了在进行事务控制的情况下，其他情况一般不推荐使用该方式。
+<aop:aspect>：用来定义切面，该切面可以包含多个切入点和通知，而且标签内部的通知和切入点定义是无序的；和advisor的区别就在此，advisor只包含一个通知和一个切入点。
+ -->
+
+
+</beans>
